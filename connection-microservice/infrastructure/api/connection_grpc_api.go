@@ -28,3 +28,16 @@ func (handler *ConnectionHandler) NewUserConnection(ctx context.Context, in *con
 	}
 	return &connectionService.UserConnectionResponse{Ok: true}, nil
 }
+
+func (handler *ConnectionHandler) ApproveConnection(ctx context.Context, in *connectionService.UserConnectionRequest) (*connectionService.UserConnectionResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "ApproveConnection")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	err := handler.service.ApproveConnection(ctx, in.Connection.UserId, in.Connection.ConnectedUserId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &connectionService.UserConnectionResponse{Ok: true}, nil
+}

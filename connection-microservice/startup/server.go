@@ -87,7 +87,7 @@ func (server *Server) initConnectionStore(driver neo4j.Driver) model.ConnectionS
 }
 
 func (server *Server) initConnectionService(store model.ConnectionStore) *application.ConnectionService {
-	return application.NewConnectionService(store)
+	return application.NewConnectionService(store, server.config)
 }
 
 func (server *Server) initConnectionHandler(service *application.ConnectionService) *api.ConnectionHandler {
