@@ -7,9 +7,8 @@ type User struct {
 }
 
 type Connection struct {
-	UserId               string
-	ConnectedUserId      string
-	IsConnected          bool
-	IsApprovedConnection bool
-	PendingConnection    bool
+	UserId            string
+	ConnectedUserId   string
+	IsConnected       bool
+	PendingConnection bool
 }

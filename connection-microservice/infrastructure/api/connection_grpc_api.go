@@ -41,3 +41,134 @@ func (handler *ConnectionHandler) ApproveConnection(ctx context.Context, in *con
 
 	return &connectionService.UserConnectionResponse{Ok: true}, nil
 }
+
+func (handler *ConnectionHandler) RejectConnection(ctx context.Context, in *connectionService.UserConnectionRequest) (*connectionService.UserConnectionResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "RejectConnection")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	err := handler.service.RejectConnection(ctx, in.Connection.UserId, in.Connection.ConnectedUserId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &connectionService.UserConnectionResponse{Ok: true}, nil
+}
+
+func (handler *ConnectionHandler) DeleteConnection(ctx context.Context, in *connectionService.Connection) (*connectionService.UserConnectionResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "DeleteConnection")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	err := handler.service.DeleteConnection(ctx, in.UserId, in.ConnectedUserId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &connectionService.UserConnectionResponse{Ok: true}, nil
+}
+
+func (handler *ConnectionHandler) GetAllConnections(ctx context.Context, in *connectionService.UserIdRequest) (*connectionService.AllConnectionResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "GetAllConnections")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	connections, err := handler.service.GetAllConnectionsByUserId(ctx, in.UserId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := &connectionService.AllConnectionResponse{
+		Connections: []*connectionService.Connection{},
+	}
+	for _, conn := range connections {
+		current := mapConnection(conn)
+		response.Connections = append(response.Connections, current)
+	}
+	return response, nil
+}
+
+func (handler *ConnectionHandler) GetFollowings(ctx context.Context, in *connectionService.UserIdRequest) (*connectionService.AllConnectionResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "GetFollowings")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	connections, err := handler.service.GetFollowings(ctx, in.UserId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := &connectionService.AllConnectionResponse{
+		Connections: []*connectionService.Connection{},
+	}
+	for _, conn := range connections {
+		current := mapConnection(conn)
+		response.Connections = append(response.Connections, current)
+	}
+	return response, nil
+}
+
+func (handler *ConnectionHandler) GetFollowers(ctx context.Context, in *connectionService.UserIdRequest) (*connectionService.AllConnectionResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "GetFollowers")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	connections, err := handler.service.GetFollowers(ctx, in.UserId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := &connectionService.AllConnectionResponse{
+		Connections: []*connectionService.Connection{},
+	}
+	for _, conn := range connections {
+		current := mapConnection(conn)
+		response.Connections = append(response.Connections, current)
+	}
+	return response, nil
+}
+
+func (handler *ConnectionHandler) GetAllRequestConnectionsByUserId(ctx context.Context, in *connectionService.UserIdRequest) (*connectionService.AllConnectionResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "GetAllRequestConnectionsByUserId")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	connections, err := handler.service.GetAllRequestConnectionsByUserId(ctx, in.UserId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := &connectionService.AllConnectionResponse{
+		Connections: []*connectionService.Connection{},
+	}
+	for _, conn := range connections {
+		current := mapConnection(conn)
+		response.Connections = append(response.Connections, current)
+	}
+	return response, nil
+}
+
+func (handler *ConnectionHandler) GetAllPendingConnectionsByUserId(ctx context.Context, in *connectionService.UserIdRequest) (*connectionService.AllConnectionResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "GetAllPendingConnectionsByUserId")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	connections, err := handler.service.GetAllPendingConnectionsByUserId(ctx, in.UserId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := &connectionService.AllConnectionResponse{
+		Connections: []*connectionService.Connection{},
+	}
+	for _, conn := range connections {
+		current := mapConnection(conn)
+		response.Connections = append(response.Connections, current)
+	}
+	return response, nil
+}
