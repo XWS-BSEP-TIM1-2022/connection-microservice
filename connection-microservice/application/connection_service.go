@@ -23,7 +23,7 @@ func NewConnectionService(store model.ConnectionStore, c *config.Config) *Connec
 		userClient: services.NewUserClient(fmt.Sprintf("%s:%s", c.UserServiceHost, c.UserServicePort))}
 }
 
-func (service *ConnectionService) CreateConnection(ctx context.Context, connection *model.Connection) error {
+func (service *ConnectionService) CreateConnection(ctx context.Context, connection *model.Connection) (*model.Connection, error) {
 	span := tracer.StartSpanFromContext(ctx, "CreateConnection")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -31,7 +31,7 @@ func (service *ConnectionService) CreateConnection(ctx context.Context, connecti
 	isPrivate, err := service.userClient.IsUserPrivateRequest(ctx, &userService.UserIdRequest{UserId: connection.ConnectedUserId})
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if isPrivate.IsPrivate {
@@ -45,26 +45,26 @@ func (service *ConnectionService) CreateConnection(ctx context.Context, connecti
 	return service.store.CreateConnection(ctx, connection)
 }
 
-func (service *ConnectionService) ApproveConnection(ctx context.Context, userId string, connectedUserId string) error {
+func (service *ConnectionService) ApproveConnection(ctx context.Context, userId string, connectedUserId string) (*model.Connection, error) {
 	span := tracer.StartSpanFromContext(ctx, "ApproveConnection")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
 	connection, err := service.store.GetConnectionByUsersId(ctx, userId, connectedUserId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if connection.PendingConnection {
 		connection.IsConnected = true
 		connection.PendingConnection = false
 	} else {
-		return errors.New("not pending connection")
+		return nil, errors.New("not pending connection")
 	}
-	err = service.store.UpdateConnection(ctx, connection)
+	conn, err := service.store.UpdateConnection(ctx, connection)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return conn, nil
 }
 
 func (service *ConnectionService) RejectConnection(ctx context.Context, userId string, connectedUserId string) error {

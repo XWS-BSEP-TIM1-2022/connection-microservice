@@ -3,8 +3,8 @@ package model
 import "context"
 
 type ConnectionStore interface {
-	CreateConnection(ctx context.Context, connection *Connection) error
-	UpdateConnection(ctx context.Context, connection *Connection) error
+	CreateConnection(ctx context.Context, connection *Connection) (*Connection, error)
+	UpdateConnection(ctx context.Context, connection *Connection) (*Connection, error)
 	DeleteConnection(ctx context.Context, userId string, connectedUserId string) error
 	GetAllConnectionsByUserId(ctx context.Context, userId string) ([]*Connection, error)
 	GetConnectionByUsersId(ctx context.Context, userId string, connectedUserId string) (*Connection, error)

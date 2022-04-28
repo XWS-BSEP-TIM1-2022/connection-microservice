@@ -17,7 +17,7 @@ func NewConnectionNeo4jStore(driver neo4j.Driver) model.ConnectionStore {
 	}
 }
 
-func (store *ConnectionNeo4jStore) CreateConnection(ctx context.Context, connection *model.Connection) error {
+func (store *ConnectionNeo4jStore) CreateConnection(ctx context.Context, connection *model.Connection) (*model.Connection, error) {
 	span := tracer.StartSpanFromContext(ctx, "CreateConnection")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -47,13 +47,13 @@ func (store *ConnectionNeo4jStore) CreateConnection(ctx context.Context, connect
 	})
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return connection, nil
 }
 
-func (store *ConnectionNeo4jStore) UpdateConnection(ctx context.Context, connection *model.Connection) error {
+func (store *ConnectionNeo4jStore) UpdateConnection(ctx context.Context, connection *model.Connection) (*model.Connection, error) {
 	span := tracer.StartSpanFromContext(ctx, "CreateConnection")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -83,10 +83,10 @@ func (store *ConnectionNeo4jStore) UpdateConnection(ctx context.Context, connect
 	})
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return connection, nil
 }
 
 func (store *ConnectionNeo4jStore) DeleteConnection(ctx context.Context, userId string, connectedUserId string) error {

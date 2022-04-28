@@ -22,11 +22,11 @@ func (handler *ConnectionHandler) NewUserConnection(ctx context.Context, in *con
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
-	err := handler.service.CreateConnection(ctx, &model.Connection{UserId: in.Connection.UserId, ConnectedUserId: in.Connection.ConnectedUserId})
+	connection, err := handler.service.CreateConnection(ctx, &model.Connection{UserId: in.Connection.UserId, ConnectedUserId: in.Connection.ConnectedUserId})
 	if err != nil {
 		return nil, err
 	}
-	return &connectionService.UserConnectionResponse{Ok: true}, nil
+	return &connectionService.UserConnectionResponse{Connection: mapConnection(connection)}, nil
 }
 
 func (handler *ConnectionHandler) ApproveConnection(ctx context.Context, in *connectionService.UserConnectionRequest) (*connectionService.UserConnectionResponse, error) {
@@ -34,12 +34,12 @@ func (handler *ConnectionHandler) ApproveConnection(ctx context.Context, in *con
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
-	err := handler.service.ApproveConnection(ctx, in.Connection.UserId, in.Connection.ConnectedUserId)
+	connection, err := handler.service.ApproveConnection(ctx, in.Connection.UserId, in.Connection.ConnectedUserId)
 	if err != nil {
 		return nil, err
 	}
 
-	return &connectionService.UserConnectionResponse{Ok: true}, nil
+	return &connectionService.UserConnectionResponse{Connection: mapConnection(connection)}, nil
 }
 
 func (handler *ConnectionHandler) RejectConnection(ctx context.Context, in *connectionService.UserConnectionRequest) (*connectionService.UserConnectionResponse, error) {
@@ -52,7 +52,7 @@ func (handler *ConnectionHandler) RejectConnection(ctx context.Context, in *conn
 		return nil, err
 	}
 
-	return &connectionService.UserConnectionResponse{Ok: true}, nil
+	return &connectionService.UserConnectionResponse{Connection: nil}, nil
 }
 
 func (handler *ConnectionHandler) DeleteConnection(ctx context.Context, in *connectionService.Connection) (*connectionService.UserConnectionResponse, error) {
@@ -65,7 +65,7 @@ func (handler *ConnectionHandler) DeleteConnection(ctx context.Context, in *conn
 		return nil, err
 	}
 
-	return &connectionService.UserConnectionResponse{Ok: true}, nil
+	return &connectionService.UserConnectionResponse{Connection: nil}, nil
 }
 
 func (handler *ConnectionHandler) GetAllConnections(ctx context.Context, in *connectionService.UserIdRequest) (*connectionService.AllConnectionResponse, error) {
