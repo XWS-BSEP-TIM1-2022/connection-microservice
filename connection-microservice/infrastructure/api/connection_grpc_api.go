@@ -42,6 +42,18 @@ func (handler *ConnectionHandler) ApproveConnection(ctx context.Context, in *con
 	return &connectionService.UserConnectionResponse{Connection: mapConnection(connection)}, nil
 }
 
+func (handler *ConnectionHandler) ApproveAllConnection(ctx context.Context, in *connectionService.UserIdRequest) (*connectionService.EmptyRequest, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "ApproveAllConnection")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	err := handler.service.ApproveAllConnection(ctx, in.UserId)
+	if err != nil {
+		return nil, err
+	}
+	return &connectionService.EmptyRequest{}, nil
+}
+
 func (handler *ConnectionHandler) RejectConnection(ctx context.Context, in *connectionService.UserConnectionRequest) (*connectionService.UserConnectionResponse, error) {
 	span := tracer.StartSpanFromContextMetadata(ctx, "RejectConnection")
 	defer span.Finish()

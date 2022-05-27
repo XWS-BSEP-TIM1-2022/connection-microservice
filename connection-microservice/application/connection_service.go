@@ -132,3 +132,23 @@ func (service *ConnectionService) GetAllPendingConnectionsByUserId(ctx context.C
 
 	return service.store.GetAllPendingConnectionsByUserId(ctx, userId)
 }
+
+func (service *ConnectionService) ApproveAllConnection(ctx context.Context, userId string) error {
+	span := tracer.StartSpanFromContext(ctx, "ApproveAllConnection")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	pendingConnections, err := service.GetAllRequestConnectionsByUserId(ctx, userId)
+	if err != nil {
+		return err
+	}
+
+	for _, connection := range pendingConnections {
+		_, err := service.ApproveConnection(ctx, connection.UserId, connection.ConnectedUserId)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
