@@ -62,7 +62,7 @@ func (store *ConnectionNeo4jStore) UpdateConnection(ctx context.Context, connect
 	defer session.Close()
 
 	_, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
-		res, err := transaction.Run("MATCH (user {userId:$userId})-[c]->(connectedUser {userId:$connectedUserId}) "+
+		res, err := transaction.Run("MATCH (user {userId:$userId})-[c:CONNECT]->(connectedUser {userId:$connectedUserId}) "+
 			"SET c.isConnected=$isConnected, c.pendingConnection=$pendingConnection "+
 			"RETURN c",
 			map[string]interface{}{
@@ -98,7 +98,7 @@ func (store *ConnectionNeo4jStore) DeleteConnection(ctx context.Context, userId 
 	defer session.Close()
 
 	_, err := session.ReadTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
-		_, err := transaction.Run("MATCH (user {userId:$userId})-[c]->(connectedUser {userId:$connectedUserId}) "+
+		_, err := transaction.Run("MATCH (user {userId:$userId})-[c:CONNECT]->(connectedUser {userId:$connectedUserId}) "+
 			"DELETE c",
 			map[string]interface{}{
 				"userId":          userId,
@@ -127,7 +127,7 @@ func (store *ConnectionNeo4jStore) GetConnectionByUsersId(ctx context.Context, u
 
 	var connection = model.Connection{}
 	_, err := session.ReadTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
-		res, err := transaction.Run("MATCH (user {userId:$userId})-[c]->(connectedUser {userId:$connectedUserId}) "+
+		res, err := transaction.Run("MATCH (user {userId:$userId})-[c:CONNECT]->(connectedUser {userId:$connectedUserId}) "+
 			"RETURN c.isConnected, c.pendingConnection",
 			map[string]interface{}{
 				"userId":          userId,
@@ -161,7 +161,7 @@ func (store *ConnectionNeo4jStore) GetAllConnectionsByUserId(ctx context.Context
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
-	cypher := "MATCH (user {userId:$userId})-[c]->(connectedUser) " +
+	cypher := "MATCH (user {userId:$userId})-[c:CONNECT]->(connectedUser) " +
 		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection"
 
 	params := map[string]interface{}{
@@ -174,7 +174,7 @@ func (store *ConnectionNeo4jStore) GetAllConnectionsByUserId(ctx context.Context
 		return nil, err
 	}
 
-	cypher = "MATCH (user)-[c]->(connectedUser {userId:$userId}) " +
+	cypher = "MATCH (user)-[c:CONNECT]->(connectedUser {userId:$userId}) " +
 		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection"
 
 	params = map[string]interface{}{
@@ -197,7 +197,7 @@ func (store *ConnectionNeo4jStore) GetFollowings(ctx context.Context, userId str
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
-	cypher := "MATCH (user {userId:$userId})-[c {isConnected:true}]->(connectedUser) " +
+	cypher := "MATCH (user {userId:$userId})-[c:CONNECT {isConnected:true}]->(connectedUser) " +
 		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection"
 
 	params := map[string]interface{}{
@@ -218,7 +218,7 @@ func (store *ConnectionNeo4jStore) GetFollowers(ctx context.Context, connectedUs
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
-	cypher := "MATCH (user)-[c {isConnected:true}]->(connectedUser {userId:$connectedUserId}) " +
+	cypher := "MATCH (user)-[c:CONNECT {isConnected:true}]->(connectedUser {userId:$connectedUserId}) " +
 		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection"
 
 	params := map[string]interface{}{
@@ -239,7 +239,7 @@ func (store *ConnectionNeo4jStore) GetAllRequestConnectionsByUserId(ctx context.
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
-	cypher := "MATCH (user)-[c {isConnected:false, pendingConnection:true}]->(connectedUser {userId:$connectedUserId}) " +
+	cypher := "MATCH (user)-[c:CONNECT {isConnected:false, pendingConnection:true}]->(connectedUser {userId:$connectedUserId}) " +
 		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection"
 
 	params := map[string]interface{}{
@@ -260,7 +260,7 @@ func (store *ConnectionNeo4jStore) GetAllPendingConnectionsByUserId(ctx context.
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
-	cypher := "MATCH (user {userId:$userId})-[c {isConnected:false, pendingConnection:true}]->(connectedUser) " +
+	cypher := "MATCH (user {userId:$userId})-[c:CONNECT {isConnected:false, pendingConnection:true}]->(connectedUser) " +
 		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection"
 
 	params := map[string]interface{}{

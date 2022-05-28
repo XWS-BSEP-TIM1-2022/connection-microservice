@@ -49,8 +49,10 @@ func (server *Server) GetCloser() io.Closer {
 func (server *Server) Start() {
 	server.neo4jDriver = server.initNeo4jClient()
 	connectionStore := server.initConnectionStore(server.neo4jDriver)
-	connectionService := server.initConnectionService(connectionStore)
-	connectionHandler := server.initConnectionHandler(connectionService)
+	blockStore := server.initBlockStore(server.neo4jDriver)
+	initConnectionService := server.initConnectionService(connectionStore)
+	blockService := server.initBlockService(blockStore, connectionStore)
+	connectionHandler := server.initConnectionHandler(initConnectionService, blockService)
 
 	server.startGrpcServer(connectionHandler)
 }
@@ -90,6 +92,15 @@ func (server *Server) initConnectionService(store model.ConnectionStore) *applic
 	return application.NewConnectionService(store, server.config)
 }
 
-func (server *Server) initConnectionHandler(service *application.ConnectionService) *api.ConnectionHandler {
-	return api.NewConnectionHandler(service)
+func (server *Server) initConnectionHandler(connectionService *application.ConnectionService, blockService *application.BlockService) *api.ConnectionHandler {
+	return api.NewConnectionHandler(connectionService, blockService)
+}
+
+func (server *Server) initBlockStore(driver neo4j.Driver) model.BlockStore {
+	store := persistance.NewBlockNeo4jStore(driver)
+	return store
+}
+
+func (server *Server) initBlockService(store model.BlockStore, connectionStore model.ConnectionStore) *application.BlockService {
+	return application.NewBlockService(store, connectionStore, server.config)
 }

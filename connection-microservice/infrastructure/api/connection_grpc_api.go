@@ -10,11 +10,13 @@ import (
 
 type ConnectionHandler struct {
 	connectionService.UnimplementedConnectionServiceServer
-	service *application.ConnectionService
+	service      *application.ConnectionService
+	blockService *application.BlockService
 }
 
-func NewConnectionHandler(service *application.ConnectionService) *ConnectionHandler {
-	return &ConnectionHandler{service: service}
+func NewConnectionHandler(service *application.ConnectionService, blockService *application.BlockService) *ConnectionHandler {
+	return &ConnectionHandler{service: service,
+		blockService: blockService}
 }
 
 func (handler *ConnectionHandler) NewUserConnection(ctx context.Context, in *connectionService.UserConnectionRequest) (*connectionService.UserConnectionResponse, error) {
@@ -183,4 +185,50 @@ func (handler *ConnectionHandler) GetAllPendingConnectionsByUserId(ctx context.C
 		response.Connections = append(response.Connections, current)
 	}
 	return response, nil
+}
+
+func (handler *ConnectionHandler) BlockUser(ctx context.Context, in *connectionService.BlockUserRequest) (*connectionService.EmptyRequest, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "BlockUser")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	err := handler.blockService.BlockUser(ctx, in.Block.UserId, in.Block.BlockUserId)
+	if err != nil {
+		return nil, err
+	}
+	return &connectionService.EmptyRequest{}, nil
+}
+
+func (handler *ConnectionHandler) UnblockUser(ctx context.Context, in *connectionService.BlockUserRequest) (*connectionService.EmptyRequest, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "UnblockUser")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	err := handler.blockService.UnblockUser(ctx, in.Block.UserId, in.Block.BlockUserId)
+	if err != nil {
+		return nil, err
+	}
+	return &connectionService.EmptyRequest{}, nil
+}
+
+func (handler *ConnectionHandler) IsBlocked(ctx context.Context, in *connectionService.Block) (*connectionService.IsBlockedResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "IsBlocked")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+	blocked, err := handler.blockService.IsBlocked(ctx, in.UserId, in.BlockUserId)
+	if err != nil {
+		return nil, err
+	}
+	return &connectionService.IsBlockedResponse{Blocked: blocked}, nil
+}
+
+func (handler *ConnectionHandler) IsBlockedAny(ctx context.Context, in *connectionService.Block) (*connectionService.IsBlockedResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "IsBlockedAny")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+	blocked, err := handler.blockService.IsBlockedAny(ctx, in.UserId, in.BlockUserId)
+	if err != nil {
+		return nil, err
+	}
+	return &connectionService.IsBlockedResponse{Blocked: blocked}, nil
 }
