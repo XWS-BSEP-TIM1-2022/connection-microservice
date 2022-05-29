@@ -93,3 +93,37 @@ func (service *BlockService) IsBlockedAny(ctx context.Context, userId string, bl
 
 	return blocked, nil
 }
+
+func (service *BlockService) GetBlocked(ctx context.Context, userId string) ([]string, error) {
+	span := tracer.StartSpanFromContext(ctx, "GetBlocked")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	return service.store.GetBlocked(ctx, userId)
+}
+
+func (service *BlockService) GetBlockedBy(ctx context.Context, userId string) ([]string, error) {
+	span := tracer.StartSpanFromContext(ctx, "GetBlockedBy")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	return service.store.GetBlockedBy(ctx, userId)
+}
+
+func (service *BlockService) GetBlockedAny(ctx context.Context, userId string) ([]string, error) {
+	span := tracer.StartSpanFromContext(ctx, "GetBlockedAny")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	blocked, err := service.store.GetBlocked(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	blockedBy, err := service.store.GetBlockedBy(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	blocked = append(blocked, blockedBy...)
+	return blocked, nil
+}

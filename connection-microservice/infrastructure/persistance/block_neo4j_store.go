@@ -116,3 +116,69 @@ func (store *BlockNeo4jStore) IsBlocked(ctx context.Context, block model.Block) 
 	}
 	return false, nil
 }
+
+func (store *BlockNeo4jStore) GetBlocked(ctx context.Context, userId string) ([]string, error) {
+	span := tracer.StartSpanFromContext(ctx, "GetBlocked")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	session := store.driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+	defer session.Close()
+
+	var blockedUserIds []string
+	_, err := session.ReadTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
+		res, err := transaction.Run("MATCH (user {userId:$userId})-[b:BLOCK]->(blockedUser) "+
+			"RETURN blockedUser.userId",
+			map[string]interface{}{
+				"userId": userId,
+			})
+		if err != nil {
+			return false, err
+		}
+
+		for res.Next() {
+			blockedUserIds = append(blockedUserIds, res.Record().Values[0].(string))
+		}
+		return false, res.Err()
+
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return blockedUserIds, nil
+
+}
+
+func (store *BlockNeo4jStore) GetBlockedBy(ctx context.Context, userId string) ([]string, error) {
+	span := tracer.StartSpanFromContext(ctx, "GetBlocked")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	session := store.driver.NewSession(neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+	defer session.Close()
+
+	var blockedUserIds []string
+	_, err := session.ReadTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
+		res, err := transaction.Run("MATCH (user)-[b:BLOCK]->(blockedUser {userId:$userId}) "+
+			"RETURN user.userId",
+			map[string]interface{}{
+				"userId": userId,
+			})
+		if err != nil {
+			return false, err
+		}
+
+		for res.Next() {
+			blockedUserIds = append(blockedUserIds, res.Record().Values[0].(string))
+		}
+		return false, res.Err()
+
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return blockedUserIds, nil
+
+}

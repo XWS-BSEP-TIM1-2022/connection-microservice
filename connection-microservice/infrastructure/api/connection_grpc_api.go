@@ -232,3 +232,39 @@ func (handler *ConnectionHandler) IsBlockedAny(ctx context.Context, in *connecti
 	}
 	return &connectionService.IsBlockedResponse{Blocked: blocked}, nil
 }
+
+func (handler *ConnectionHandler) Blocked(ctx context.Context, in *connectionService.UserIdRequest) (*connectionService.BlockedResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "Blocked")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	blocked, err := handler.blockService.GetBlocked(ctx, in.UserId)
+	if err != nil {
+		return nil, err
+	}
+	return &connectionService.BlockedResponse{UsersId: blocked}, nil
+}
+
+func (handler *ConnectionHandler) BlockedBy(ctx context.Context, in *connectionService.UserIdRequest) (*connectionService.BlockedResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "Blocked")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	blocked, err := handler.blockService.GetBlockedBy(ctx, in.UserId)
+	if err != nil {
+		return nil, err
+	}
+	return &connectionService.BlockedResponse{UsersId: blocked}, nil
+}
+
+func (handler *ConnectionHandler) BlockedAny(ctx context.Context, in *connectionService.UserIdRequest) (*connectionService.BlockedResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "Blocked")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	blocked, err := handler.blockService.GetBlockedAny(ctx, in.UserId)
+	if err != nil {
+		return nil, err
+	}
+	return &connectionService.BlockedResponse{UsersId: blocked}, nil
+}
