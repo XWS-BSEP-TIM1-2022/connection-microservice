@@ -12,21 +12,30 @@ import (
 )
 
 type ConnectionService struct {
-	store      model.ConnectionStore
-	userClient userService.UserServiceClient
-	config     *config.Config
+	store        model.ConnectionStore
+	userClient   userService.UserServiceClient
+	config       *config.Config
+	blockService *BlockService
 }
 
-func NewConnectionService(store model.ConnectionStore, c *config.Config) *ConnectionService {
+func NewConnectionService(store model.ConnectionStore, c *config.Config, blockService *BlockService) *ConnectionService {
 	return &ConnectionService{
-		store:      store,
-		userClient: services.NewUserClient(fmt.Sprintf("%s:%s", c.UserServiceHost, c.UserServicePort))}
+		store:        store,
+		blockService: blockService,
+		config:       c,
+		userClient:   services.NewUserClient(fmt.Sprintf("%s:%s", c.UserServiceHost, c.UserServicePort))}
 }
 
 func (service *ConnectionService) CreateConnection(ctx context.Context, connection *model.Connection) (*model.Connection, error) {
 	span := tracer.StartSpanFromContext(ctx, "CreateConnection")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	isBlocked, _ := service.blockService.IsBlockedAny(ctx, connection.UserId, connection.ConnectedUserId)
+
+	if isBlocked {
+		return nil, errors.New("user is blocked")
+	}
 
 	isPrivate, err := service.userClient.IsUserPrivateRequest(ctx, &userService.UserIdRequest{UserId: connection.ConnectedUserId})
 
@@ -50,6 +59,12 @@ func (service *ConnectionService) ApproveConnection(ctx context.Context, userId 
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
+	isBlocked, _ := service.blockService.IsBlockedAny(ctx, userId, connectedUserId)
+
+	if isBlocked {
+		return nil, errors.New("user is blocked")
+	}
+
 	connection, err := service.store.GetConnectionByUsersId(ctx, userId, connectedUserId)
 	if err != nil {
 		return nil, err
@@ -72,6 +87,12 @@ func (service *ConnectionService) RejectConnection(ctx context.Context, userId s
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
+	isBlocked, _ := service.blockService.IsBlockedAny(ctx, userId, connectedUserId)
+
+	if isBlocked {
+		return errors.New("user is blocked")
+	}
+
 	connection, err := service.store.GetConnectionByUsersId(ctx, userId, connectedUserId)
 	if err != nil {
 		return err
@@ -86,6 +107,12 @@ func (service *ConnectionService) DeleteConnection(ctx context.Context, userId s
 	span := tracer.StartSpanFromContext(ctx, "DeleteConnection")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	isBlocked, _ := service.blockService.IsBlockedAny(ctx, userId, connectedUserId)
+
+	if isBlocked {
+		return errors.New("user is blocked")
+	}
 
 	return service.store.DeleteConnection(ctx, userId, connectedUserId)
 }

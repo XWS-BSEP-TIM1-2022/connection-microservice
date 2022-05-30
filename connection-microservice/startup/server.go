@@ -50,8 +50,8 @@ func (server *Server) Start() {
 	server.neo4jDriver = server.initNeo4jClient()
 	connectionStore := server.initConnectionStore(server.neo4jDriver)
 	blockStore := server.initBlockStore(server.neo4jDriver)
-	initConnectionService := server.initConnectionService(connectionStore)
 	blockService := server.initBlockService(blockStore, connectionStore)
+	initConnectionService := server.initConnectionService(connectionStore, blockService)
 	connectionHandler := server.initConnectionHandler(initConnectionService, blockService)
 
 	server.startGrpcServer(connectionHandler)
@@ -88,8 +88,8 @@ func (server *Server) initConnectionStore(driver neo4j.Driver) model.ConnectionS
 	return store
 }
 
-func (server *Server) initConnectionService(store model.ConnectionStore) *application.ConnectionService {
-	return application.NewConnectionService(store, server.config)
+func (server *Server) initConnectionService(store model.ConnectionStore, blockService *application.BlockService) *application.ConnectionService {
+	return application.NewConnectionService(store, server.config, blockService)
 }
 
 func (server *Server) initConnectionHandler(connectionService *application.ConnectionService, blockService *application.BlockService) *api.ConnectionHandler {
