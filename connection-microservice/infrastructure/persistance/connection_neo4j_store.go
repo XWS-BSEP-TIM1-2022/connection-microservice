@@ -28,12 +28,15 @@ func (store *ConnectionNeo4jStore) CreateConnection(ctx context.Context, connect
 	_, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
 		res, err := transaction.Run("MERGE (user:User {userId:$userId}) "+
 			"MERGE (connectedUser:User {userId:$connectedUserId}) "+
-			"MERGE (user)-[c:CONNECT {isConnected:$isConnected, pendingConnection:$pendingConnection}]->(connectedUser) RETURN c",
+			"MERGE (user)-[c:CONNECT {isConnected:$isConnected, pendingConnection:$pendingConnection, isMessageNotificationEnabled:$isMessageNotificationEnabled, isPostNotificationEnabled:$isPostNotificationEnabled, isCommentNotificationEnabled:$isCommentNotificationEnabled}]->(connectedUser) RETURN c",
 			map[string]interface{}{
-				"userId":            connection.UserId,
-				"connectedUserId":   connection.ConnectedUserId,
-				"isConnected":       connection.IsConnected,
-				"pendingConnection": connection.PendingConnection,
+				"userId":                       connection.UserId,
+				"connectedUserId":              connection.ConnectedUserId,
+				"isConnected":                  connection.IsConnected,
+				"pendingConnection":            connection.PendingConnection,
+				"isMessageNotificationEnabled": true,
+				"isPostNotificationEnabled":    true,
+				"isCommentNotificationEnabled": true,
 			})
 		if err != nil {
 			return nil, err
@@ -63,13 +66,16 @@ func (store *ConnectionNeo4jStore) UpdateConnection(ctx context.Context, connect
 
 	_, err := session.WriteTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
 		res, err := transaction.Run("MATCH (user {userId:$userId})-[c:CONNECT]->(connectedUser {userId:$connectedUserId}) "+
-			"SET c.isConnected=$isConnected, c.pendingConnection=$pendingConnection "+
+			"SET c.isConnected=$isConnected, c.pendingConnection=$pendingConnection , c.isMessageNotificationEnabled=$isMessageNotificationEnabled , c.isPostNotificationEnabled=$isPostNotificationEnabled , c.isCommentNotificationEnabled=$isCommentNotificationEnabled "+
 			"RETURN c",
 			map[string]interface{}{
-				"userId":            connection.UserId,
-				"connectedUserId":   connection.ConnectedUserId,
-				"isConnected":       connection.IsConnected,
-				"pendingConnection": connection.PendingConnection,
+				"userId":                       connection.UserId,
+				"connectedUserId":              connection.ConnectedUserId,
+				"isConnected":                  connection.IsConnected,
+				"pendingConnection":            connection.PendingConnection,
+				"isMessageNotificationEnabled": connection.IsMessageNotificationEnabled,
+				"isPostNotificationEnabled":    connection.IsPostNotificationEnabled,
+				"isCommentNotificationEnabled": connection.IsCommentNotificationEnabled,
 			})
 		if err != nil {
 			return nil, err
@@ -128,7 +134,7 @@ func (store *ConnectionNeo4jStore) GetConnectionByUsersId(ctx context.Context, u
 	var connection = model.Connection{}
 	_, err := session.ReadTransaction(func(transaction neo4j.Transaction) (interface{}, error) {
 		res, err := transaction.Run("MATCH (user {userId:$userId})-[c:CONNECT]->(connectedUser {userId:$connectedUserId}) "+
-			"RETURN c.isConnected, c.pendingConnection",
+			"RETURN c.isConnected, c.pendingConnection, c.isMessageNotificationEnabled, c.isPostNotificationEnabled, c.isCommentNotificationEnabled",
 			map[string]interface{}{
 				"userId":          userId,
 				"connectedUserId": connectedUserId,
@@ -139,10 +145,13 @@ func (store *ConnectionNeo4jStore) GetConnectionByUsersId(ctx context.Context, u
 
 		if res.Next() {
 			connection = model.Connection{
-				UserId:            userId,
-				ConnectedUserId:   connectedUserId,
-				IsConnected:       res.Record().Values[0].(bool),
-				PendingConnection: res.Record().Values[1].(bool),
+				UserId:                       userId,
+				ConnectedUserId:              connectedUserId,
+				IsConnected:                  res.Record().Values[0].(bool),
+				PendingConnection:            res.Record().Values[1].(bool),
+				IsMessageNotificationEnabled: res.Record().Values[2].(bool),
+				IsPostNotificationEnabled:    res.Record().Values[3].(bool),
+				IsCommentNotificationEnabled: res.Record().Values[4].(bool),
 			}
 			return nil, nil
 		}
@@ -219,7 +228,7 @@ func (store *ConnectionNeo4jStore) GetFollowers(ctx context.Context, connectedUs
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
 	cypher := "MATCH (user)-[c:CONNECT {isConnected:true}]->(connectedUser {userId:$connectedUserId}) " +
-		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection"
+		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection, c.isMessageNotificationEnabled, c.isPostNotificationEnabled, c.isCommentNotificationEnabled"
 
 	params := map[string]interface{}{
 		"connectedUserId": connectedUserId,
@@ -293,10 +302,13 @@ func (store *ConnectionNeo4jStore) GetConnections(ctx context.Context, cypher st
 
 		for res.Next() {
 			connection = append(connection, &model.Connection{
-				UserId:            res.Record().Values[0].(string),
-				ConnectedUserId:   res.Record().Values[1].(string),
-				IsConnected:       res.Record().Values[2].(bool),
-				PendingConnection: res.Record().Values[3].(bool),
+				UserId:                       res.Record().Values[0].(string),
+				ConnectedUserId:              res.Record().Values[1].(string),
+				IsConnected:                  res.Record().Values[2].(bool),
+				PendingConnection:            res.Record().Values[3].(bool),
+				IsMessageNotificationEnabled: res.Record().Values[4].(bool),
+				IsPostNotificationEnabled:    res.Record().Values[5].(bool),
+				IsCommentNotificationEnabled: res.Record().Values[6].(bool),
 			})
 		}
 		return nil, res.Err()

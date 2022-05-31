@@ -179,3 +179,86 @@ func (service *ConnectionService) ApproveAllConnection(ctx context.Context, user
 
 	return nil
 }
+
+func (service *ConnectionService) ChangeMessageNotification(ctx context.Context, userId string, connectedUserId string) (*model.Connection, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "ChangeMessageNotification")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	isBlocked, _ := service.blockService.IsBlockedAny(ctx, userId, connectedUserId)
+
+	if isBlocked {
+		return nil, errors.New("user is blocked")
+	}
+
+	connection, err := service.store.GetConnectionByUsersId(ctx, userId, connectedUserId)
+	if err != nil {
+		return nil, err
+	}
+
+	connection.IsMessageNotificationEnabled = !connection.IsMessageNotificationEnabled
+
+	conn, err := service.store.UpdateConnection(ctx, connection)
+	if err != nil {
+		return nil, err
+	}
+	return conn, nil
+}
+
+func (service *ConnectionService) ChangePostNotification(ctx context.Context, userId string, connectedUserId string) (*model.Connection, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "ChangePostNotification")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	isBlocked, _ := service.blockService.IsBlockedAny(ctx, userId, connectedUserId)
+
+	if isBlocked {
+		return nil, errors.New("user is blocked")
+	}
+
+	connection, err := service.store.GetConnectionByUsersId(ctx, userId, connectedUserId)
+	if err != nil {
+		return nil, err
+	}
+
+	connection.IsPostNotificationEnabled = !connection.IsPostNotificationEnabled
+
+	conn, err := service.store.UpdateConnection(ctx, connection)
+	if err != nil {
+		return nil, err
+	}
+	return conn, nil
+}
+
+func (service *ConnectionService) ChangeCommentNotification(ctx context.Context, userId string, connectedUserId string) (*model.Connection, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "ChangeCommentNotification")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	isBlocked, _ := service.blockService.IsBlockedAny(ctx, userId, connectedUserId)
+
+	if isBlocked {
+		return nil, errors.New("user is blocked")
+	}
+
+	connection, err := service.store.GetConnectionByUsersId(ctx, userId, connectedUserId)
+	if err != nil {
+		return nil, err
+	}
+
+	connection.IsCommentNotificationEnabled = !connection.IsCommentNotificationEnabled
+
+	conn, err := service.store.UpdateConnection(ctx, connection)
+	if err != nil {
+		return nil, err
+	}
+	return conn, nil
+}
+
+func (service *ConnectionService) GetConnection(ctx context.Context, userId string, connectedUserId string) (*model.Connection, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "GetConnection")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	return service.store.GetConnectionByUsersId(ctx, userId, connectedUserId)
+}

@@ -82,6 +82,18 @@ func (handler *ConnectionHandler) DeleteConnection(ctx context.Context, in *conn
 	return &connectionService.UserConnectionResponse{Connection: nil}, nil
 }
 
+func (handler *ConnectionHandler) GetConnection(ctx context.Context, in *connectionService.Connection) (*connectionService.Connection, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "GetAllConnections")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	connection, err := handler.service.GetConnection(ctx, in.UserId, in.ConnectedUserId)
+	if err != nil {
+		return nil, err
+	}
+	return mapConnection(connection), nil
+}
+
 func (handler *ConnectionHandler) GetAllConnections(ctx context.Context, in *connectionService.UserIdRequest) (*connectionService.AllConnectionResponse, error) {
 	span := tracer.StartSpanFromContextMetadata(ctx, "GetAllConnections")
 	defer span.Finish()
@@ -267,4 +279,46 @@ func (handler *ConnectionHandler) BlockedAny(ctx context.Context, in *connection
 		return nil, err
 	}
 	return &connectionService.BlockedResponse{UsersId: blocked}, nil
+}
+
+func (handler *ConnectionHandler) ChangeMessageNotification(ctx context.Context, in *connectionService.UserConnectionRequest) (*connectionService.UserConnectionResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "ChangeMessageNotification")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	connection, err := handler.service.ChangeMessageNotification(ctx, in.Connection.UserId, in.Connection.ConnectedUserId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &connectionService.UserConnectionResponse{Connection: mapConnection(connection)}, nil
+
+}
+
+func (handler *ConnectionHandler) ChangePostNotification(ctx context.Context, in *connectionService.UserConnectionRequest) (*connectionService.UserConnectionResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "ChangePostNotification")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	connection, err := handler.service.ChangePostNotification(ctx, in.Connection.UserId, in.Connection.ConnectedUserId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &connectionService.UserConnectionResponse{Connection: mapConnection(connection)}, nil
+
+}
+
+func (handler *ConnectionHandler) ChangeCommentNotification(ctx context.Context, in *connectionService.UserConnectionRequest) (*connectionService.UserConnectionResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "ChangeCommentNotification")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	connection, err := handler.service.ChangeCommentNotification(ctx, in.Connection.UserId, in.Connection.ConnectedUserId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &connectionService.UserConnectionResponse{Connection: mapConnection(connection)}, nil
+
 }
