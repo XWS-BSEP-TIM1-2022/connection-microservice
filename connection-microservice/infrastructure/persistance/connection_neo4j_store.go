@@ -52,6 +52,9 @@ func (store *ConnectionNeo4jStore) CreateConnection(ctx context.Context, connect
 	if err != nil {
 		return nil, err
 	}
+	connection.IsMessageNotificationEnabled = true
+	connection.IsPostNotificationEnabled = true
+	connection.IsCommentNotificationEnabled = true
 
 	return connection, nil
 }
@@ -171,7 +174,7 @@ func (store *ConnectionNeo4jStore) GetAllConnectionsByUserId(ctx context.Context
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
 	cypher := "MATCH (user {userId:$userId})-[c:CONNECT]->(connectedUser) " +
-		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection"
+		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection, c.isMessageNotificationEnabled, c.isPostNotificationEnabled, c.isCommentNotificationEnabled"
 
 	params := map[string]interface{}{
 		"userId": userId,
@@ -184,7 +187,7 @@ func (store *ConnectionNeo4jStore) GetAllConnectionsByUserId(ctx context.Context
 	}
 
 	cypher = "MATCH (user)-[c:CONNECT]->(connectedUser {userId:$userId}) " +
-		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection"
+		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection, c.isMessageNotificationEnabled, c.isPostNotificationEnabled, c.isCommentNotificationEnabled"
 
 	params = map[string]interface{}{
 		"userId": userId,
@@ -207,7 +210,7 @@ func (store *ConnectionNeo4jStore) GetFollowings(ctx context.Context, userId str
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
 	cypher := "MATCH (user {userId:$userId})-[c:CONNECT {isConnected:true}]->(connectedUser) " +
-		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection"
+		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection, c.isMessageNotificationEnabled, c.isPostNotificationEnabled, c.isCommentNotificationEnabled"
 
 	params := map[string]interface{}{
 		"userId": userId,
@@ -249,7 +252,7 @@ func (store *ConnectionNeo4jStore) GetAllRequestConnectionsByUserId(ctx context.
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
 	cypher := "MATCH (user)-[c:CONNECT {isConnected:false, pendingConnection:true}]->(connectedUser {userId:$connectedUserId}) " +
-		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection"
+		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection, c.isMessageNotificationEnabled, c.isPostNotificationEnabled, c.isCommentNotificationEnabled"
 
 	params := map[string]interface{}{
 		"connectedUserId": userId,
@@ -270,7 +273,7 @@ func (store *ConnectionNeo4jStore) GetAllPendingConnectionsByUserId(ctx context.
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
 	cypher := "MATCH (user {userId:$userId})-[c:CONNECT {isConnected:false, pendingConnection:true}]->(connectedUser) " +
-		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection"
+		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection, c.isMessageNotificationEnabled, c.isPostNotificationEnabled, c.isCommentNotificationEnabled"
 
 	params := map[string]interface{}{
 		"userId": userId,

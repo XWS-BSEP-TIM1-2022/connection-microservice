@@ -240,7 +240,7 @@ func (handler *ConnectionHandler) IsBlockedAny(ctx context.Context, in *connecti
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 	blocked, err := handler.blockService.IsBlockedAny(ctx, in.UserId, in.BlockUserId)
 	if err != nil {
-		return nil, err
+		return &connectionService.IsBlockedResponse{Blocked: false}, err
 	}
 	return &connectionService.IsBlockedResponse{Blocked: blocked}, nil
 }
