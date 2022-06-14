@@ -22,22 +22,27 @@ func NewBlockService(store model.BlockStore, connectionStore model.ConnectionSto
 }
 
 func (service *BlockService) BlockUser(ctx context.Context, userId string, blockedUserId string) error {
+	Log.Info("User with id: " + userId + " blocks user with id: " + blockedUserId)
+
 	span := tracer.StartSpanFromContext(ctx, "BlockUser")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
 	err := service.store.BlockUser(ctx, model.Block{UserId: userId, BlockedUserId: blockedUserId})
 	if err != nil {
+		Log.Error("Error on blocking user. Error: " + err.Error())
 		return err
 	}
 
 	err = service.connectionStore.DeleteConnection(ctx, userId, blockedUserId)
 	if err != nil {
+		Log.Error("Error deleting connection after blocking user. Error: " + err.Error())
 		return err
 	}
 
 	err = service.connectionStore.DeleteConnection(ctx, blockedUserId, userId)
 	if err != nil {
+		Log.Error("Error deleting connection after blocking user. Error: " + err.Error())
 		return err
 	}
 
@@ -45,18 +50,23 @@ func (service *BlockService) BlockUser(ctx context.Context, userId string, block
 }
 
 func (service *BlockService) UnblockUser(ctx context.Context, userId string, blockedUserId string) error {
+	Log.Info("User with id: " + userId + " unblocks user with id: " + blockedUserId)
+
 	span := tracer.StartSpanFromContext(ctx, "BlockUser")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
 
 	err := service.store.UnblockUser(ctx, model.Block{UserId: userId, BlockedUserId: blockedUserId})
 	if err != nil {
+		Log.Error("Error on unblocking user. Error: " + err.Error())
 		return err
 	}
 	return nil
 }
 
 func (service *BlockService) IsBlocked(ctx context.Context, userId string, blockedUserId string) (bool, error) {
+	Log.Info("Is user with id: " + blockedUserId + " blocked by user with id: " + userId)
+
 	span := tracer.StartSpanFromContext(ctx, "IsBlocked")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -68,6 +78,8 @@ func (service *BlockService) IsBlocked(ctx context.Context, userId string, block
 }
 
 func (service *BlockService) IsBlockedAny(ctx context.Context, userId string, blockedUserId string) (bool, error) {
+	Log.Info("Are any of users with id1: " + userId + " , id2: " + blockedUserId + " blocked")
+
 	span := tracer.StartSpanFromContext(ctx, "IsBlockedAny")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -95,6 +107,8 @@ func (service *BlockService) IsBlockedAny(ctx context.Context, userId string, bl
 }
 
 func (service *BlockService) GetBlocked(ctx context.Context, userId string) ([]string, error) {
+	Log.Info("Get blocked of user with id: " + userId)
+
 	span := tracer.StartSpanFromContext(ctx, "GetBlocked")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -103,6 +117,8 @@ func (service *BlockService) GetBlocked(ctx context.Context, userId string) ([]s
 }
 
 func (service *BlockService) GetBlockedBy(ctx context.Context, userId string) ([]string, error) {
+	Log.Info("Get users blocked by user with id: " + userId)
+
 	span := tracer.StartSpanFromContext(ctx, "GetBlockedBy")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -111,6 +127,8 @@ func (service *BlockService) GetBlockedBy(ctx context.Context, userId string) ([
 }
 
 func (service *BlockService) GetBlockedAny(ctx context.Context, userId string) ([]string, error) {
+	Log.Info("Get blocked any of user with id: " + userId)
+
 	span := tracer.StartSpanFromContext(ctx, "GetBlockedAny")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)

@@ -6,8 +6,10 @@ replace github.com/XWS-BSEP-TIM1-2022/dislinkt/util => ./../../util
 
 require (
 	github.com/XWS-BSEP-TIM1-2022/dislinkt/util v0.0.0-20220419090605-7ed74d3dfc18
+	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/neo4j/neo4j-go-driver/v4 v4.4.2
 	github.com/opentracing/opentracing-go v1.2.0
+	github.com/sirupsen/logrus v1.4.2
 	go.mongodb.org/mongo-driver v1.9.0
 	google.golang.org/grpc v1.46.0
 )
@@ -18,6 +20,9 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.10.0 // indirect
+	github.com/jonboulle/clockwork v0.3.0 // indirect
+	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
+	github.com/lestrrat-go/strftime v1.0.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/uber/jaeger-client-go v2.30.0+incompatible // indirect
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect

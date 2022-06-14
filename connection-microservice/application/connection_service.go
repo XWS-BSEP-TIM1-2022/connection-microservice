@@ -9,6 +9,7 @@ import (
 	userService "github.com/XWS-BSEP-TIM1-2022/dislinkt/util/proto/user"
 	"github.com/XWS-BSEP-TIM1-2022/dislinkt/util/services"
 	"github.com/XWS-BSEP-TIM1-2022/dislinkt/util/tracer"
+	"github.com/sirupsen/logrus"
 )
 
 type ConnectionService struct {
@@ -17,6 +18,8 @@ type ConnectionService struct {
 	config       *config.Config
 	blockService *BlockService
 }
+
+var Log = logrus.New()
 
 func NewConnectionService(store model.ConnectionStore, c *config.Config, blockService *BlockService) *ConnectionService {
 	return &ConnectionService{
@@ -27,6 +30,8 @@ func NewConnectionService(store model.ConnectionStore, c *config.Config, blockSe
 }
 
 func (service *ConnectionService) CreateConnection(ctx context.Context, connection *model.Connection) (*model.Connection, error) {
+	Log.Info("Creating new connection by user with id: " + connection.UserId + " , with user with id: " + connection.ConnectedUserId)
+
 	span := tracer.StartSpanFromContext(ctx, "CreateConnection")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -34,12 +39,14 @@ func (service *ConnectionService) CreateConnection(ctx context.Context, connecti
 	isBlocked, _ := service.blockService.IsBlockedAny(ctx, connection.UserId, connection.ConnectedUserId)
 
 	if isBlocked {
+		Log.Warn("Cant create connection, user with id: " + connection.UserId + " is blocked.")
 		return nil, errors.New("user is blocked")
 	}
 
 	isPrivate, err := service.userClient.IsUserPrivateRequest(ctx, &userService.UserIdRequest{UserId: connection.ConnectedUserId})
 
 	if err != nil {
+		Log.Error("Error while creating connection. Error: " + err.Error())
 		return nil, err
 	}
 
@@ -55,6 +62,8 @@ func (service *ConnectionService) CreateConnection(ctx context.Context, connecti
 }
 
 func (service *ConnectionService) ApproveConnection(ctx context.Context, userId string, connectedUserId string) (*model.Connection, error) {
+	Log.Info("Approving connection by user with id: " + connectedUserId + " , for connection request from user with id: " + userId)
+
 	span := tracer.StartSpanFromContext(ctx, "ApproveConnection")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -62,11 +71,13 @@ func (service *ConnectionService) ApproveConnection(ctx context.Context, userId 
 	isBlocked, _ := service.blockService.IsBlockedAny(ctx, userId, connectedUserId)
 
 	if isBlocked {
+		Log.Warn("Cant approve connection, user with id: " + connectedUserId + " is blocked.")
 		return nil, errors.New("user is blocked")
 	}
 
 	connection, err := service.store.GetConnectionByUsersId(ctx, userId, connectedUserId)
 	if err != nil {
+		Log.Error("Error while approving connection. Error: " + err.Error())
 		return nil, err
 	}
 	if connection.PendingConnection {
@@ -83,6 +94,8 @@ func (service *ConnectionService) ApproveConnection(ctx context.Context, userId 
 }
 
 func (service *ConnectionService) RejectConnection(ctx context.Context, userId string, connectedUserId string) error {
+	Log.Info("Rejecting connection of users with id1: " + userId + " , id2: " + connectedUserId)
+
 	span := tracer.StartSpanFromContext(ctx, "RejectConnection")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -104,6 +117,8 @@ func (service *ConnectionService) RejectConnection(ctx context.Context, userId s
 }
 
 func (service *ConnectionService) DeleteConnection(ctx context.Context, userId string, connectedUserId string) error {
+	Log.Info("Deleting connection of users with id1: " + userId + " , id2: " + connectedUserId)
+
 	span := tracer.StartSpanFromContext(ctx, "DeleteConnection")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -119,6 +134,8 @@ func (service *ConnectionService) DeleteConnection(ctx context.Context, userId s
 
 // GetAllConnectionsByUserId isConnected = true || false
 func (service *ConnectionService) GetAllConnectionsByUserId(ctx context.Context, userId string) ([]*model.Connection, error) {
+	Log.Info("Get all connections of user with id: " + userId)
+
 	span := tracer.StartSpanFromContext(ctx, "GetAllConnectionsByUserId")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -128,6 +145,8 @@ func (service *ConnectionService) GetAllConnectionsByUserId(ctx context.Context,
 
 // GetFollowings isConnected = true
 func (service *ConnectionService) GetFollowings(ctx context.Context, userId string) ([]*model.Connection, error) {
+	Log.Info("Get followings of user with id: " + userId)
+
 	span := tracer.StartSpanFromContext(ctx, "GetConnectionsByUserId")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -137,6 +156,8 @@ func (service *ConnectionService) GetFollowings(ctx context.Context, userId stri
 
 // GetFollowers isConnected = true
 func (service *ConnectionService) GetFollowers(ctx context.Context, connectedUserId string) ([]*model.Connection, error) {
+	Log.Info("Get followers of user with id: " + connectedUserId)
+
 	span := tracer.StartSpanFromContext(ctx, "GetConnectionsByConnectedUserid")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -145,6 +166,8 @@ func (service *ConnectionService) GetFollowers(ctx context.Context, connectedUse
 }
 
 func (service *ConnectionService) GetAllRequestConnectionsByUserId(ctx context.Context, userId string) ([]*model.Connection, error) {
+	Log.Info("Get all request connections of user with id: " + userId)
+
 	span := tracer.StartSpanFromContext(ctx, "GetAllRequestConnectionsByUserId")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -153,6 +176,8 @@ func (service *ConnectionService) GetAllRequestConnectionsByUserId(ctx context.C
 }
 
 func (service *ConnectionService) GetAllPendingConnectionsByUserId(ctx context.Context, userId string) ([]*model.Connection, error) {
+	Log.Info("Get all pending connections of user with id: " + userId)
+
 	span := tracer.StartSpanFromContext(ctx, "GetAllPendingConnectionsByUserId")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -161,6 +186,8 @@ func (service *ConnectionService) GetAllPendingConnectionsByUserId(ctx context.C
 }
 
 func (service *ConnectionService) ApproveAllConnection(ctx context.Context, userId string) error {
+	Log.Info("Approve all connections of user with id: " + userId)
+
 	span := tracer.StartSpanFromContext(ctx, "ApproveAllConnection")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -181,6 +208,8 @@ func (service *ConnectionService) ApproveAllConnection(ctx context.Context, user
 }
 
 func (service *ConnectionService) ChangeMessageNotification(ctx context.Context, userId string, connectedUserId string) (*model.Connection, error) {
+	Log.Info("Change message notification")
+
 	span := tracer.StartSpanFromContextMetadata(ctx, "ChangeMessageNotification")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -206,6 +235,8 @@ func (service *ConnectionService) ChangeMessageNotification(ctx context.Context,
 }
 
 func (service *ConnectionService) ChangePostNotification(ctx context.Context, userId string, connectedUserId string) (*model.Connection, error) {
+	Log.Info("Change post notification")
+
 	span := tracer.StartSpanFromContextMetadata(ctx, "ChangePostNotification")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -231,6 +262,8 @@ func (service *ConnectionService) ChangePostNotification(ctx context.Context, us
 }
 
 func (service *ConnectionService) ChangeCommentNotification(ctx context.Context, userId string, connectedUserId string) (*model.Connection, error) {
+	Log.Info("Change comment notification")
+
 	span := tracer.StartSpanFromContextMetadata(ctx, "ChangeCommentNotification")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
@@ -256,6 +289,8 @@ func (service *ConnectionService) ChangeCommentNotification(ctx context.Context,
 }
 
 func (service *ConnectionService) GetConnection(ctx context.Context, userId string, connectedUserId string) (*model.Connection, error) {
+	Log.Info("Get connection of users with id1: " + userId + ", id2: " + connectedUserId)
+
 	span := tracer.StartSpanFromContextMetadata(ctx, "GetConnection")
 	defer span.Finish()
 	ctx = tracer.ContextWithSpan(context.Background(), span)
