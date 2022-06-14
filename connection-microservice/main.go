@@ -25,7 +25,7 @@ func main() {
 func configuringLog() {
 	application.Log = log
 	log.Out = os.Stdout
-	path := "post-microservice.log"
+	path := "connection-microservice.log"
 	/*Log rotation correlation function
 	`Withlinkname 'establishes a soft connection for the latest logs
 	`Withrotationtime 'sets the time of log splitting, and how often to split
