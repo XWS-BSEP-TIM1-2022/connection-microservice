@@ -323,3 +323,59 @@ func (store *ConnectionNeo4jStore) GetConnections(ctx context.Context, cypher st
 	}
 	return connection, nil
 }
+
+func (store *ConnectionNeo4jStore) GetFollowingsOfMyFollowings(ctx context.Context, connectedUserId string, userId string) ([]string, error) {
+	span := tracer.StartSpanFromContext(ctx, "GetAllRequestConnectionsByUserId")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	cypher := "MATCH (user {userId:$connectedUserId})-[c:CONNECT {isConnected:true}]->(connectedUser) WHERE NOT ({userId:$userId})-[:CONNECT {isConnected:true}]->(connectedUser)" +
+		"RETURN user.userId, connectedUser.userId, c.isConnected, c.pendingConnection, c.isMessageNotificationEnabled, c.isPostNotificationEnabled, c.isCommentNotificationEnabled LIMIT 10"
+
+	params := map[string]interface{}{
+		"connectedUserId": connectedUserId,
+		"userId":          userId,
+	}
+
+	connections, err := store.GetConnections(ctx, cypher, params)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var retVal []string
+
+	for _, connection := range connections {
+		retVal = append(retVal, connection.ConnectedUserId)
+	}
+
+	return retVal, nil
+}
+
+func (store *ConnectionNeo4jStore) GetRandom(ctx context.Context, userId string, limit int) ([]string, error) {
+	span := tracer.StartSpanFromContext(ctx, "GetRandom")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	cypher := "MATCH (user) WHERE NOT (user.userId=$userId OR({userId:$userId})-[:CONNECT {isConnected:true}]->(user))" +
+		"RETURN user.userId, user.userId as f, false as a, false as b, false as c, false as d, false as e LIMIT $limit"
+
+	params := map[string]interface{}{
+		"userId": userId,
+		"limit":  limit,
+	}
+
+	connections, err := store.GetConnections(ctx, cypher, params)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var retVal []string
+
+	for _, connection := range connections {
+		retVal = append(retVal, connection.ConnectedUserId)
+	}
+
+	return retVal, nil
+}

@@ -12,4 +12,6 @@ type ConnectionStore interface {
 	GetFollowers(ctx context.Context, connectedUserId string) ([]*Connection, error)
 	GetAllRequestConnectionsByUserId(ctx context.Context, userId string) ([]*Connection, error)
 	GetAllPendingConnectionsByUserId(ctx context.Context, userId string) ([]*Connection, error)
+	GetFollowingsOfMyFollowings(ctx context.Context, connectedUserId string, userId string) ([]string, error)
+	GetRandom(ctx context.Context, userId string, limit int) ([]string, error)
 }

@@ -322,3 +322,23 @@ func (handler *ConnectionHandler) ChangeCommentNotification(ctx context.Context,
 	return &connectionService.UserConnectionResponse{Connection: mapConnection(connection)}, nil
 
 }
+
+func (handler *ConnectionHandler) GetAllSuggestionsByUserId(ctx context.Context, in *connectionService.UserIdRequest) (*connectionService.SuggestionsResponse, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "GetAllSuggestionsByUserId")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	suggestions, err := handler.service.GetAllSuggestionsByUserId(ctx, in.UserId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response := &connectionService.SuggestionsResponse{
+		SuggestionUserIds: []*connectionService.UserIdRequest{},
+	}
+	for _, userId := range suggestions {
+		response.SuggestionUserIds = append(response.SuggestionUserIds, &connectionService.UserIdRequest{UserId: userId})
+	}
+	return response, nil
+}

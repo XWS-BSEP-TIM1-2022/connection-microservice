@@ -297,3 +297,58 @@ func (service *ConnectionService) GetConnection(ctx context.Context, userId stri
 
 	return service.store.GetConnectionByUsersId(ctx, userId, connectedUserId)
 }
+
+func (service *ConnectionService) GetAllSuggestionsByUserId(ctx context.Context, userId string) ([]string, error) {
+	span := tracer.StartSpanFromContextMetadata(ctx, "GetAllSuggestionsByUserId")
+	defer span.Finish()
+	ctx = tracer.ContextWithSpan(context.Background(), span)
+
+	potentialUsers := StringSet{set: map[string]bool{}}
+
+	followings, err := service.store.GetFollowings(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	// friends of my friends
+	for _, connection := range followings {
+		users, err := service.store.GetFollowingsOfMyFollowings(ctx, connection.ConnectedUserId, userId)
+		if err == nil {
+			for _, user := range users {
+				potentialUsers.Add(user)
+			}
+		}
+	}
+
+	users, err := service.store.GetRandom(ctx, userId, 15-potentialUsers.length())
+	if err == nil {
+		for _, user := range users {
+			potentialUsers.Add(user)
+		}
+	}
+
+	var retVal []string
+
+	for i, _ := range potentialUsers.set {
+		blockedAny, _ := service.blockService.IsBlockedAny(ctx, userId, i)
+		if i != userId && !blockedAny {
+			retVal = append(retVal, i)
+		}
+	}
+
+	return retVal, nil
+}
+
+type StringSet struct {
+	set map[string]bool
+}
+
+func (set *StringSet) Add(i string) bool {
+	_, found := set.set[i]
+	set.set[i] = true
+	return !found //False if it existed already
+}
+
+func (set *StringSet) length() int {
+	return len(set.set)
+}
